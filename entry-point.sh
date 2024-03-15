@@ -17,7 +17,7 @@ if [[ -d /.ssh ]]; then
 fi
 
 #setup git safedirs
-for dir in "/root/workdir/"; do
+for dir in "/root/workdir/"*/; do
     if [ -d "$dir" ]; then
         git config --global --add safe.directory "$dir"
     fi
