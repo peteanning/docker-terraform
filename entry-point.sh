@@ -19,7 +19,8 @@ fi
 #setup git safedirs
 for dir in "/root/workdir/"*/; do
     if [ -d "$dir" ]; then
-        git config --global --add safe.directory "$dir"
+	_dir=$(echo $dir | sed 's/\/$//')
+        git config --global --add safe.directory "$_dir"
     fi
 done
 
