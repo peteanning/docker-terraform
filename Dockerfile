@@ -34,6 +34,7 @@ RUN apt-get update -qq \
     && apt-get install -qqy \
     tzdata \
     curl \
+    vim \
     zip \
     git \
     apt-transport-https \
