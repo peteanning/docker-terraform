@@ -20,6 +20,9 @@ WORKDIR $HOME
 
 RUN mkdir -p $HOME/workdir
 
+COPY replace-provider.sh /bin/replace-provider.sh
+RUN chmod +x /bin/replace-provider.sh
+
 #prepare to mount ~/.ssh to /.ssh
 COPY entry-point.sh /bin/entry-point.sh
 RUN chmod +x /bin/entry-point.sh
