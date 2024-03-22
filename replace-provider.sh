@@ -14,7 +14,7 @@ fi
 
 
 
-cmd="aws-profile -p upscan-labs  terraform state replace-provider $autoApprove -lock=true -lock-timeout=30s -- -/$provider hashicorp/$provider"
+cmd="aws-profile -p upscan-$environment  terraform state replace-provider $autoApprove -lock=true -lock-timeout=30s -- -/$provider hashicorp/$provider"
 
 
 usage(){
@@ -68,10 +68,10 @@ do_cmd(){
 
 
 if [ "$environment" = "labs" ] || [ "$environment" = "live" ]; then
-  if [ "$profile" = "development" ] || [ "$profile" = "qa" ] || [ "$profile" = "staging" ]; then
+  if [ "$profile" = "development" ] || [ "$profile" = "qa" ] || [ "$profile" = "staging" ] || [ "$profile" = "externaltest" ] || [ "$profile" = "production" ]; then
     do_cmd
   else
-    usaage
+    usage
     exit 1
   fi
 
