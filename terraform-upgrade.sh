@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ux
+set -u
 
 upgradeFlag=false
 file="versions.tf"
@@ -47,28 +47,32 @@ initialise_commands() {
 upgrade() {
   echo "Upgrading from $fromVersion to $toVersion"
   for c  in "${validComponents[@]}"; do
-    local dir="$cwd/$c"
+    local dir="$cwd/components/$c"
 
-    echo "Looking for $file in $dir"
-    cd "$dir" || continue
-    if [  -f "$file" ]; then
-      echo "Found  $file  in directory: $dir"
-      sed -i "s/>= $fromVersion/>= $toVersion/" $file
-    fi
+    if [[ "$component" = "*" ]] ||  [[ "$c" = "$component" ]]; then
 
-    if [ -d "$dir/.terraform" ]; then
-      echo "Found existing .terraform directory deleting before init"
-      rm -rf "$dir/.terraform/"
-    fi
-
-    echo "Generating the plan after upgrade in tfplan.out"
-    echo "To view the plan use aws-profile -p upscan-$environment terraform show -json tfplan.out"
-    $initCmd
-    $selectProfileCmd
-    $savePlanCmd 
-    
-    # Navigate back to the parent directory
-    cd ..
+      echo "Looking for $file in $dir"
+      cd "$dir" || continue
+      if [  -f "$file" ]; then
+        echo "Found  $file  in directory: $dir"
+        sed -i "s/>= $fromVersion/>= $toVersion/" $file
+      fi
+  
+      if [ -d "$dir/.terraform" ]; then
+        echo "Found existing .terraform directory deleting before init"
+        rm -rf "$dir/.terraform/"
+      fi
+  
+      echo "Generating the plan after upgrade in tfplan.out"
+      echo "To view the plan use aws-profile -p upscan-$environment terraform show -json tfplan.out"
+      $initCmd
+      $selectProfileCmd
+      $savePlanCmd 
+      
+      cd ..
+    else
+      echo "Not upgrading $c no match"
+    fi      
   done
 }
 
@@ -136,6 +140,7 @@ if [ "$upgradeFlag" = true ]; then
       exit 0
     elif [[ " ${validComponents[@]} " =~ " $component " ]]; then
 	    echo "Upgrading $component"
+	    upgrade
     else
 	    echo "Invalid $component specified"
 	    echo "Should be one of ${components[@]}"
