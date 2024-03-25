@@ -6,8 +6,16 @@ ENV TZ=Europe/London
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 ENV SBT_VERSION 1.9.7
-ENV TF_VERSION_12 0.12.31
-ENV TF_VERSION_11 0.11.14
+ENV TF_VERSION_15 0.15.5
+ENV TF_VERSION_1 1.0.11
+ENV TF_VERSION_1_1 1.1.9
+ENV TF_VERSION_1_2 1.2.9
+ENV TF_VERSION_1_3 1.3.10
+ENV TF_VERSION_1_4 1.4.7
+ENV TF_VERSION_1_5 1.5.7
+ENV TF_VERSION_1_6 1.6.4
+
+
 ENV PYTHON_VERSION 3.9.4
 
 ENV PYENV_RELEASE v1.2.26
@@ -22,6 +30,8 @@ RUN mkdir -p $HOME/workdir
 
 COPY replace-provider.sh /bin/replace-provider.sh
 RUN chmod +x /bin/replace-provider.sh
+COPY terraform-upgrade.sh /bin/terraform-upgrade.sh
+RUN chmod +x /bin/terraform-upgrade.sh
 
 #prepare to mount ~/.ssh to /.ssh
 COPY entry-point.sh /bin/entry-point.sh
@@ -63,8 +73,14 @@ RUN git clone https://github.com/pyenv/pyenv.git $HOME/.pyenv && \
 # Terraform
 RUN git clone https://github.com/tfutils/tfenv.git tfenv && \
     ln -s $HOME/tfenv/bin/* /usr/local/bin && \
-    tfenv install "$TF_VERSION_12" && \
-    tfenv install "$TF_VERSION_11"
+    tfenv install "$TF_VERSION_15" && \
+    tfenv install "$TF_VERSION_1" && \
+    tfenv install "$TF_VERSION_1_1" && \
+    tfenv install "$TF_VERSION_1_2" && \
+    tfenv install "$TF_VERSION_1_3" && \
+    tfenv install "$TF_VERSION_1_4" && \
+    tfenv install "$TF_VERSION_1_5" && \
+    tfenv install "$TF_VERSION_1_6"
 
 #AWS CLI
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
