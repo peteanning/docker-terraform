@@ -58,11 +58,14 @@ upgrade() {
     local dir="$cwd/components/$c"
 
     if [[ "$component" = "*" ]] ||  [[ "$c" = "$component" ]]; then
-
+      echo "************************************************************************************************************************"
+      echo "[$c]"
+      echo "************************************************************************************************************************"
       echo "Looking for $file in $dir"
       cd "$dir" || continue
       if [  -f "$file" ]; then
         echo "Found  $file  in directory: $dir"
+	echo "Upgrading $c from $fromVersion to $toVersion"
         sed -i "s/>= $fromVersion/>= $toVersion/" $file
       fi
   
@@ -79,7 +82,7 @@ upgrade() {
       
       cd ..
     else
-      echo "Not upgrading $c no match"
+      echo "Ignoring $c excluded by filter ==  '$component'"
     fi      
   done
 }
@@ -94,7 +97,7 @@ usage() {
     echo "  -t, --to              Specify the version to upgrade to (required for --upgrade)"
 }
 
-check_profile_and_intialise_cmds(){
+check_profile_and_initialise_cmds(){
     if [[ "$profile" != "development" ]] && [[ "$profile" != "qa" ]] && [[ "$profile" != "staging" ]] && [[ "$profile" != "externalTest" ]] && [[ "$profile" != "production" ]]; then
        usage
        exit 1
@@ -174,7 +177,7 @@ elif [ "$unlockFlag" = true ]; then
       usage
       exit 1
     fi
-    check_profile_and_intialise_cmds
+    check_profile_and_initialise_cmds
     unlock $lockId
 else
     usage
