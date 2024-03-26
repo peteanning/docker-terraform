@@ -32,16 +32,24 @@ validComponents=(
     "vpce_s3"
     "vpce_sqs"
     "vpce_telemetry_kafka"
-    "waf_ac"
+    "waf_acl"
 )
 
 initialise_commands() {
   echo "Setting up commands for $environment in the $profile workspace"  
   awsProfile="aws-profile -p upscan-$environment"	
-  initCmd="$awsProfile terraform init --backend-config=../../backends/$profile.tfvars"
-  selectProfileCmd="$awsProfile terraform workspace select $profile"	
-  savePlanCmd="$awsProfile terraform plan -out tfplan.out"
+  initCmd="$awsProfile terraform init -no-color --backend-config=../../backends/$profile.tfvars"
+  selectProfileCmd="$awsProfile terraform workspace select -no-color $profile"	
+  savePlanCmd="$awsProfile terraform plan -no-color -out tfplan.out"
   applyCmd="$awsProfile terraform apply tfplan.out"  
+}
+
+unlock(){
+  local lockId=$1
+  local unlockCmd="$awsProfile terraform force-unlock $lockId"
+
+  echo "Forcing unlock with: $unlockCmd"
+  $unlockCmd
 }
 
 upgrade() {
@@ -77,17 +85,33 @@ upgrade() {
 }
 
 usage() {
-    echo "Usage: $0 [-u | --upgrade] [-f | --from <version>] [-t | --to <version>]"
+    echo "Usage: $0 '--upgrade | --unlock'  --profile=<profile> '--lockid=<id>' | '--from=<version>' '--to=<version>'"
     echo "Options:"
-    echo "  -u, --upgrade    Perform upgrade"
-    echo "  -f, --from       Specify the version to upgrade from"
-    echo "  -t, --to         Specify the version to upgrade to"
+    echo "  --upgrade | --unlock  Perform upgrade or Unlock a component"
+    echo "  --lockid              Specify the lockid to unlock (required for --unlock)"
+    echo "  --profile             Specify the workspace to be one of: development | qa | staging | externaltest | production"
+    echo "  -f, --from            Specify the version to upgrade from (required for --upgrade)"
+    echo "  -t, --to              Specify the version to upgrade to (required for --upgrade)"
+}
+
+check_profile_and_intialise_cmds(){
+    if [[ "$profile" != "development" ]] && [[ "$profile" != "qa" ]] && [[ "$profile" != "staging" ]] && [[ "$profile" != "externalTest" ]] && [[ "$profile" != "production" ]]; then
+       usage
+       exit 1
+    else
+      initialise_commands
+    fi
+
 }
 
 for arg in "$@"; do
     case $arg in
-        -u|--upgrade)
+        --upgrade)
             upgradeFlag=true
+            shift
+            ;;
+        --unlock)
+            unlockFlag=true
             shift
             ;;
         --profile=*)
@@ -106,6 +130,9 @@ for arg in "$@"; do
 			      ;;
 	      esac
 
+	    ;;
+        --lockid=*)
+            lockId=${arg#*=}
 	    ;;
         --from=*)
             fromVersion=${arg#*=}
@@ -130,11 +157,7 @@ if [ "$upgradeFlag" = true ]; then
         usage
         exit 1
     fi
-    if [[ "$profile" != "development" ]] && [[ "$profile" != "qa" ]] && [[ "$profile" != "staging" ]] && [[ "$profile" != "externalTest" ]] && [[ "$profile" != "production" ]]; then
-       usage
-       exit 1
-    fi
-    initialise_commands
+    check_profile_and_initialise_cmds
     if [[ "$component" = "*" ]]; then
       upgrade
       exit 0
@@ -146,6 +169,13 @@ if [ "$upgradeFlag" = true ]; then
 	    echo "Should be one of ${components[@]}"
 	    exit 1
     fi
+elif [ "$unlockFlag" = true ]; then
+    if [ -z "$lockId" ]; then
+      usage
+      exit 1
+    fi
+    check_profile_and_intialise_cmds
+    unlock $lockId
 else
     usage
 fi
