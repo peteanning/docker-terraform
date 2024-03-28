@@ -3,7 +3,6 @@
 set -u
 
 upgradeFlag=false
-file="versions.tf"
 cwd=$(pwd)
 profile="UNSET"
 initCmd="UNSET"
@@ -52,23 +51,34 @@ unlock(){
   $unlockCmd
 }
 
-upgrade() {
+upgrade_version(){
+  local file=$1
   echo "Upgrading from $fromVersion to $toVersion"
+  if [  -f "$file" ]; then
+    echo "Found  $file"
+    echo "Upgrading from $fromVersion to $toVersion in $file"
+    sed -i "s/>= $fromVersion/>= $toVersion/" $file
+  fi
+}
+
+upgrade() {
+  local cmd=$1
+
   for c  in "${validComponents[@]}"; do
     local dir="$cwd/components/$c"
 
     if [[ "$component" = "*" ]] ||  [[ "$c" = "$component" ]]; then
-      echo "************************************************************************************************************************"
-      echo "[$c]"
-      echo "************************************************************************************************************************"
-      echo "Looking for $file in $dir"
-      cd "$dir" || continue
-      if [  -f "$file" ]; then
-        echo "Found  $file  in directory: $dir"
-	echo "Upgrading $c from $fromVersion to $toVersion"
-        sed -i "s/>= $fromVersion/>= $toVersion/" $file
-      fi
-  
+
+    case $cmd in
+        terraform)
+           upgrade_version "$dir/versions.tf"
+            ;;
+          *)
+	    echo "Unknown Upgrade Cmd $cmd"
+	    exit 1
+	    ;;
+     esac
+     cd $dir
       if [ -d "$dir/.terraform" ]; then
         echo "Found existing .terraform directory deleting before init"
         rm -rf "$dir/.terraform/"
@@ -80,9 +90,9 @@ upgrade() {
       $selectProfileCmd
       $savePlanCmd 
       
-      cd ..
+      cd $cwd 
     else
-      echo "Ignoring $c excluded by filter ==  '$component'"
+      echo "Not upgrading $c no match"
     fi      
   done
 }
@@ -97,7 +107,7 @@ usage() {
     echo "  -t, --to              Specify the version to upgrade to (required for --upgrade)"
 }
 
-check_profile_and_initialise_cmds(){
+check_profile_and_intialise_cmds(){
     if [[ "$profile" != "development" ]] && [[ "$profile" != "qa" ]] && [[ "$profile" != "staging" ]] && [[ "$profile" != "externalTest" ]] && [[ "$profile" != "production" ]]; then
        usage
        exit 1
@@ -162,11 +172,13 @@ if [ "$upgradeFlag" = true ]; then
     fi
     check_profile_and_initialise_cmds
     if [[ "$component" = "*" ]]; then
-      upgrade
+      check_profile_and_intialise_cmds
+      upgrade terraform
       exit 0
     elif [[ " ${validComponents[@]} " =~ " $component " ]]; then
 	    echo "Upgrading $component"
-	    upgrade
+            check_profile_and_intialise_cmds
+	    upgrade terraform
     else
 	    echo "Invalid $component specified"
 	    echo "Should be one of ${components[@]}"
@@ -177,7 +189,7 @@ elif [ "$unlockFlag" = true ]; then
       usage
       exit 1
     fi
-    check_profile_and_initialise_cmds
+    check_profile_and_intialise_cmds
     unlock $lockId
 else
     usage
