@@ -70,7 +70,7 @@ upgrade_aws_provider(){
       exit 1
   fi
   
-  sed -i "s/\sversion\s*=\s*\"[0-9.]*\"/ version = "$toVersion"/" $file
+  sed -i "s/\sversion\s*=\s*\"[0-9.]*\"/ version = \"$toVersion\"/" $file
   echo "AWS version updated successfully to $toVersion in $file"
 
 }
@@ -86,7 +86,9 @@ upgrade() {
     local dir="$cwd/components/$c"
 
     if [[ "$component" = "*" ]] ||  [[ "$c" = "$component" ]]; then
-
+    echo "************************************************************************************************************************"
+    echo "[$c]"
+    echo "************************************************************************************************************************"
     case $cmd in
         terraform)
            upgrade_version "$dir/versions.tf"
@@ -103,6 +105,12 @@ upgrade() {
       if [ -d "$dir/.terraform" ]; then
         echo "Found existing .terraform directory deleting before init"
         rm -rf "$dir/.terraform/"
+	rm "$dir/tfplan.out"
+      fi
+
+      if [ -f "$dir/.terraform.lock.hcl" ]; then
+        echo "Found existing $dir/.terraform.lock.hcl file deleting before inti"
+	rm -f "$dir/.terraform.lock.hcl"
       fi
   
       echo "Generating the plan after upgrade in tfplan.out"
