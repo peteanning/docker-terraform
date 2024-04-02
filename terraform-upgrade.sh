@@ -4,6 +4,8 @@ set -u
 
 upgradeFlag=false
 awsProvider=false
+unlockFlag=false
+file="versions.tf"
 cwd=$(pwd)
 profile="UNSET"
 initCmd="UNSET"
@@ -132,8 +134,8 @@ usage() {
     echo "  --upgrade | --unlock  Perform upgrade or Unlock a component"
     echo "  --lockid              Specify the lockid to unlock (required for --unlock)"
     echo "  --profile             Specify the workspace to be one of: development | qa | staging | externaltest | production"
-    echo "  -f, --from            Specify the version to upgrade from (required for --upgrade)"
-    echo "  -t, --to              Specify the version to upgrade to (required for --upgrade)"
+    echo "  --from            Specify the version to upgrade from (required for --upgrade)"
+    echo "  --to              Specify the version to upgrade to (required for --upgrade)"
 }
 
 check_profile_and_intialise_cmds(){
@@ -150,7 +152,7 @@ for arg in "$@"; do
     case $arg in
         --upgrade)
             upgradeFlag=true
-            shift
+	    shift	
             ;;
         --awsprovider)
             awsProvider=true
@@ -158,7 +160,6 @@ for arg in "$@"; do
             ;;
         --unlock)
             unlockFlag=true
-            shift
             ;;
         --profile=*)
             profile=${arg#*=}
@@ -175,31 +176,26 @@ for arg in "$@"; do
 			      exit 1
 			      ;;
 	      esac
-
+            shift
 	    ;;
         --lockid=*)
             lockId=${arg#*=}
 	    ;;
         --from=*)
             fromVersion=${arg#*=}
-	    ;;
+	    ;; 
         --to=*)
             toVersion=${arg#*=}
 	    ;;
         --component=*)
             component=${arg#*=}
 	    ;;
-        *)
-            echo "Error: Unknown option $1"
-            usage
-            exit 1
-            ;;
     esac
 done
 
 if [ "$upgradeFlag" = true ]; then
     if [ -z "$fromVersion" ] || [ -z "$toVersion" ]; then
-        echo "Error: Both -f/--from and -t/--to options are required for upgrade"
+        echo "Error: Both --from and --to options are required for upgrade"
         usage
         exit 1
     fi
