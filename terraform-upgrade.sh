@@ -3,6 +3,7 @@
 set -u
 
 upgradeFlag=false
+awsProvider=false
 cwd=$(pwd)
 profile="UNSET"
 initCmd="UNSET"
@@ -61,8 +62,25 @@ upgrade_version(){
   fi
 }
 
+upgrade_aws_provider(){
+  local file=$1
+  
+  if [ ! -f "$file" ]; then
+      echo "Error: File $file not found."
+      exit 1
+  fi
+  
+  sed -i "s/\sversion\s*=\s*\"[0-9.]*\"/ version = "$toVersion"/" $file
+  echo "AWS version updated successfully to $toVersion in $file"
+
+}
+
 upgrade() {
-  local cmd=$1
+  if [ "$awsProvider" = true ]; then
+    local cmd="awsProvider"
+  else
+    local cmd="terraform"
+  fi
 
   for c  in "${validComponents[@]}"; do
     local dir="$cwd/components/$c"
@@ -72,6 +90,9 @@ upgrade() {
     case $cmd in
         terraform)
            upgrade_version "$dir/versions.tf"
+            ;;
+        awsProvider)
+           upgrade_aws_provider "$dir/versions.tf"
             ;;
           *)
 	    echo "Unknown Upgrade Cmd $cmd"
@@ -121,6 +142,10 @@ for arg in "$@"; do
     case $arg in
         --upgrade)
             upgradeFlag=true
+            shift
+            ;;
+        --awsprovider)
+            awsProvider=true
             shift
             ;;
         --unlock)
@@ -173,12 +198,12 @@ if [ "$upgradeFlag" = true ]; then
     check_profile_and_initialise_cmds
     if [[ "$component" = "*" ]]; then
       check_profile_and_intialise_cmds
-      upgrade terraform
+      upgrade
       exit 0
     elif [[ " ${validComponents[@]} " =~ " $component " ]]; then
 	    echo "Upgrading $component"
             check_profile_and_intialise_cmds
-	    upgrade terraform
+	    upgrade
     else
 	    echo "Invalid $component specified"
 	    echo "Should be one of ${components[@]}"
