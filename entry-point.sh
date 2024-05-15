@@ -7,6 +7,12 @@ set -e
 if [[ -d /.ssh ]]; then
 
   cp -R /.ssh /root/.ssh
+  echo "Host hmrcpublic" > /root/.ssh/config
+  echo "    " >> /root/.ssh/config
+  echo "   HostName github.com" >> /root/.ssh/config
+  echo "   User git" >> /root/.ssh/config
+  echo "   IdentityFile ~/.ssh/peter_anning_gmail" >> /root/.ssh/config
+ 
   chmod 700 /root/.ssh
   chmod 600 /root/.ssh/*
   if compgen -G "/.ssh/*.pub" > /dev/null; then
